@@ -40,7 +40,8 @@ jobs:
           passphrase: ${{ secrets.DEV_SSH_PASSPHRASE }}
           script: |
             ls -al
-            echo '666'
+            echo '$hostname'
+            echo 'curl dev-sonarqube.rna.lab'
       - name: Official SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v1.2.0
         env:
