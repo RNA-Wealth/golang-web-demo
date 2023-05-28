@@ -19,16 +19,12 @@ jobs:
         id: vars
         run: | 
           echo "privatekey=${{ secrets.DEV_SSH_PRIVATEKEY }} | base64 -d" >> $GITHUB_OUTPUT
-      - name: Set up WireGuard
-        uses: egor-tensin/setup-wireguard@v1
+      - name: Connect to VPN
+        uses: "kota65535/github-openvpn-connect-action@v2"
         with:
-          endpoint: '${{ secrets.DEV_WIREGUARD_ENDPOINT }}'
-          endpoint_public_key: '${{ secrets.DEV_WIREGUARD_ENDPOINT_PUBLIC_KEY }}'
-          ips: '${{ secrets.DEV_WIREGUARD_IPS }}'
-          allowed_ips: '${{ secrets.DEV_WIREGUARD_ALLOW_IPS }}'
-          private_key: '${{ secrets.DEV_WIREGUARD_PRIVATEKEY }}'
-          preshared_key: '${{ secrets.DEV_WIREGUARD_PRESHAREDKEY }}'
-          keepalive: '${{ secrets.DEV_WIREGUARD_KEEPALIVE }}'
+          config_file: ./config.ovpn
+          username: ${{ secrets.DEV_OPENVPN_USER }}
+          password: ${{ secrets.DEV_OPENVPN_PASSWORD }}
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v0.1.10
         with:
