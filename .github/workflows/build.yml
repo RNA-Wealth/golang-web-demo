@@ -1,0 +1,57 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy To DEV
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ['main']
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - name: Create output Parameter(registry, docker tag, Branch and repo name) docker tag then set outputs
+        id: vars
+        run: | 
+          echo "privatekey=${{ secrets.DEV_SSH_PRIVATEKEY }} | base64 -d" >> $GITHUB_OUTPUT
+      - name: Set up WireGuard
+        uses: egor-tensin/setup-wireguard@v1
+        with:
+          endpoint: '${{ secrets.DEV_WIREGUARD_ENDPOINT }}'
+          endpoint_public_key: '${{ secrets.DEV_WIREGUARD_ENDPOINT_PUBLIC_KEY }}'
+          ips: '${{ secrets.DEV_WIREGUARD_IPS }}'
+          allowed_ips: '${{ secrets.DEV_WIREGUARD_ALLOW_IPS }}'
+          private_key: '${{ secrets.DEV_WIREGUARD_PRIVATEKEY }}'
+          preshared_key: '${{ secrets.DEV_WIREGUARD_PRESHAREDKEY }}'
+          keepalive: '${{ secrets.DEV_WIREGUARD_KEEPALIVE }}'
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.DEV_VM_HOST }}
+          username: ${{ secrets.DEV_SSH_USER }}
+          key: ${{ steps.vars.outputs.privatekey }}
+          port: ${{ secrets.DEV_SSH_PORT }}
+          passphrase: ${{ secrets.DEV_SSH_PASSPHRASE }}
+          script: |
+            ls -al
+            echo '666'
+      - name: Official SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v1.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      
