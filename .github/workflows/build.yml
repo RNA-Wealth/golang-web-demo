@@ -15,22 +15,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Create output Parameter(registry, docker tag, Branch and repo name) docker tag then set outputs
-        id: vars
+      - name: Create vpn conf and ssh keys
         run: | 
-          echo "privatekey=${{ secrets.DEV_SSH_PRIVATEKEY }} | base64 -d" >> $GITHUB_OUTPUT
+          echo ${{ secrets.DEV_OPENVPN_BASE64 }} | base64 -d > ./config.ovpn
+          echo ${{ secrets.DEV_SSH_USER_PRIVATE_KEY_BASE64 }} | base64 -d > ./id_rsa
+          chmod 600 ./id_rsa
+      - name: Install OpenVPN
+        run: |
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
       - name: Connect to VPN
         uses: "kota65535/github-openvpn-connect-action@v2"
         with:
           config_file: ./config.ovpn
           username: ${{ secrets.DEV_OPENVPN_USER }}
           password: ${{ secrets.DEV_OPENVPN_PASSWORD }}
-      - name: executing remote ssh commands using password
+      - name: connect to dev
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.DEV_VM_HOST }}
           username: ${{ secrets.DEV_SSH_USER }}
-          key: ${{ steps.vars.outputs.privatekey }}
+          key_path: ./id_rsa
           port: ${{ secrets.DEV_SSH_PORT }}
           passphrase: ${{ secrets.DEV_SSH_PASSPHRASE }}
           script: |
